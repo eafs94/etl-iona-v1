@@ -25,6 +25,7 @@ def ingestao_bronze(nome_tabela: str, nome_arquivo: str):
     destino.mkdir(parents=True, exist_ok=True)
 
     df.to_csv(destino / f"{nome_tabela}.csv", index=False)
+    print(df.dtypes)
     print(df.head())
 
     print(f"Tabela {nome_tabela} ingerida com sucesso.")

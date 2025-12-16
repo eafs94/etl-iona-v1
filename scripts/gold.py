@@ -8,6 +8,9 @@ SILVER_DIR = BASE_DIR / "data" / "silver"
 GOLD_DIR = BASE_DIR / "data" / "gold"
 
 (GOLD_DIR / "vendas_enriquecidas").mkdir(parents=True, exist_ok=True)
+(GOLD_DIR / "faturamento_dia").mkdir(parents=True, exist_ok=True)
+(GOLD_DIR / "faturamento_produto").mkdir(parents=True, exist_ok=True)
+(GOLD_DIR / "faturamento_categoria").mkdir(parents=True, exist_ok=True)
 
 # Gold - Join de Negócio
 def gold_vendas_enriquecidas():
@@ -43,7 +46,88 @@ def gold_vendas_enriquecidas():
     print(df.dtypes)
     print(df.head())
 
+def carregar_base_gold():
+    return pd.read_parquet(
+        GOLD_DIR / "vendas_enriquecidas" / "vendas_enriquecidas.parquet"
+    )
+
+# Gold - Faturamento por dia
+def gold_faturamento_dia():
+    df = carregar_base_gold()
+
+    faturamento = (
+        df
+        .groupby("data_venda", as_index=False)
+        .agg(
+            faturamento_total=("valor_venda", "sum"),
+            quantidade_vendas=("valor_venda", "count")
+        )
+        .sort_values("data_venda")
+    )
+
+    faturamento.to_parquet(
+        GOLD_DIR / "faturamento_dia" / "faturamento_dia.parquet",
+        index=False
+    )
+
+    print("\nGold - Faturamento por dia")
+    print(faturamento.dtypes)
+    print(faturamento.head())
+
+# Gold - Faturamento por produto
+def gold_faturamento_produto():
+    df = carregar_base_gold()
+
+    faturamento = (
+        df
+        .groupby(
+            ["cod_produto", "descricao"],
+            as_index=False
+        )
+        .agg(
+            faturamento_total=("valor_venda", "sum"),
+            quantidade_vendas=("valor_venda", "count")
+        )
+        .sort_values("faturamento_total", ascending=False)
+    )
+
+    faturamento.to_parquet(
+        GOLD_DIR / "faturamento_produto" / "faturamento_produto.parquet",
+        index=False
+    )
+
+    print("\nGold - Faturamento por produto")
+    print(faturamento.dtypes)
+    print(faturamento.head())
+
+# Gold - Faturamento por categoria
+def gold_faturamento_categoria():
+    df = carregar_base_gold()
+
+    faturamento = (
+        df
+        .groupby("categoria", as_index=False)
+        .agg(
+            faturamento_total=("valor_venda", "sum"),
+            quantidade_vendas=("valor_venda", "count")
+        )
+        .sort_values("faturamento_total", ascending=False)
+    )
+
+    faturamento.to_parquet(
+        GOLD_DIR / "faturamento_categoria" / "faturamento_categoria.parquet",
+        index=False
+    )
+
+    print("\nGold - Faturamento por categoria")
+    print(faturamento.dtypes)
+    print(faturamento.head())
+
 # Execução
 if __name__ == "__main__":
     gold_vendas_enriquecidas()
-    print("Camada Gold (join) gerada com sucesso.")
+    gold_faturamento_dia()
+    gold_faturamento_produto()
+    gold_faturamento_categoria()
+
+    print("\nCamada Gold (métricas) gerada com sucesso.")
